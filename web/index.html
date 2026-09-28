@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Armada</title>
+    <link rel="stylesheet" href="/vendor/mdi/materialdesignicons.min.css">
+    <link rel="stylesheet" href="/vendor/xterm/xterm.min.css">
+    <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="header-left">
+        <button class="icon-button" id="menuButton" title="Меню">
+            <span class="mdi mdi-menu"></span>
+        </button>
+        <div class="logo">
+            <div class="logo-icon">
+                <span class="mdi mdi-view-dashboard-outline"></span>
+            </div>
+            <span>Armada</span>
+        </div>
+    </div>
+    <div class="header-right">
+        <button class="icon-button" id="refreshButton" title="Обновить">
+            <span class="mdi mdi-refresh"></span>
+        </button>
+        <button class="icon-button" id="themeButton" title="Сменить тему">
+            <span class="mdi mdi-theme-light-dark"></span>
+        </button>
+    </div>
+</header>
+
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-section">
+        <div class="sidebar-title">Узел</div>
+        <a class="nav-item" href="#/" data-page="dashboard">
+            <span class="mdi mdi-view-dashboard-outline"></span>
+            <span class="nav-label">Обзор</span>
+        </a>
+        <a class="nav-item" href="#/console" data-page="console">
+            <span class="mdi mdi-console"></span>
+            <span class="nav-label">Консоль</span>
+        </a>
+    </div>
+</aside>
+
+<main class="main">
+    <div class="content" id="app"></div>
+</main>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/vendor/xterm/xterm.min.js"></script>
+<script src="/vendor/xterm/xterm-addon-fit.min.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

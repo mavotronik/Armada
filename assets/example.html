@@ -1,0 +1,3650 @@
+html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Universal Dashboard</title>
+
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css"
+    >
+
+    <style>
+        :root {
+            --bg: #f5f6f8;
+            --surface: #ffffff;
+            --surface-hover: #f0f2f5;
+            --border: #e1e4e8;
+
+            --text: #1d2129;
+            --text-secondary: #6b7280;
+
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+
+            --header-height: 60px;
+            --sidebar-width: 240px;
+            --sidebar-collapsed: 68px;
+
+            --radius: 10px;
+
+            --shadow:
+                0 1px 3px rgba(0, 0, 0, .06),
+                0 4px 12px rgba(0, 0, 0, .04);
+
+            --transition: 180ms ease;
+        }
+
+        [data-theme="dark"] {
+            --bg: #111315;
+            --surface: #1a1d21;
+            --surface-hover: #23272c;
+            --border: #30343a;
+
+            --text: #edf0f2;
+            --text-secondary: #9ca3af;
+
+            --primary: #60a5fa;
+            --primary-hover: #3b82f6;
+
+            --shadow:
+                0 1px 3px rgba(0, 0, 0, .3),
+                0 5px 20px rgba(0, 0, 0, .2);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+        }
+
+        body {
+            font-family:
+                Inter,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: var(--bg);
+            color: var(--text);
+
+            transition:
+                background var(--transition),
+                color var(--transition);
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        .header {
+            position: fixed;
+            z-index: 1000;
+
+            top: 0;
+            left: 0;
+            right: 0;
+
+            height: var(--header-height);
+
+            display: flex;
+            align-items: center;
+
+            padding: 0 14px;
+
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+
+            box-shadow: var(--shadow);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-right {
+            margin-left: auto;
+
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 8px;
+
+            background: var(--primary);
+            color: white;
+        }
+
+        .icon-button {
+            width: 38px;
+            height: 38px;
+
+            border: 0;
+            border-radius: 8px;
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            background: transparent;
+            color: var(--text-secondary);
+
+            font-size: 21px;
+
+            transition: .18s ease;
+        }
+
+        .icon-button:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        /* =====================================================
+           SIDEBAR
+        ===================================================== */
+
+        .sidebar {
+            position: fixed;
+            z-index: 900;
+
+            top: var(--header-height);
+            left: 0;
+            bottom: 0;
+
+            width: var(--sidebar-width);
+
+            padding: 10px;
+
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+
+            overflow-y: auto;
+            overflow-x: hidden;
+
+            transition:
+                width .22s ease,
+                transform .22s ease;
+        }
+
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed);
+        }
+
+        .sidebar-section {
+            padding: 8px 0 14px;
+        }
+
+        .sidebar-title {
+            padding: 8px 12px;
+
+            font-size: 11px;
+            font-weight: 600;
+
+            text-transform: uppercase;
+
+            color: var(--text-secondary);
+
+            white-space: nowrap;
+
+            transition: opacity .12s ease;
+        }
+
+        .sidebar.collapsed .sidebar-title {
+            opacity: 0;
+        }
+
+        .nav-item {
+            height: 44px;
+
+            display: flex;
+            align-items: center;
+
+            gap: 13px;
+
+            padding: 0 12px;
+            margin: 2px 0;
+
+            border-radius: 8px;
+
+            color: var(--text-secondary);
+
+            text-decoration: none;
+
+            white-space: nowrap;
+
+            transition: .18s ease;
+        }
+
+        .nav-item:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: color-mix(
+                in srgb,
+                var(--primary) 12%,
+                transparent
+            );
+
+            color: var(--primary);
+        }
+
+        .nav-item .mdi {
+            min-width: 24px;
+            font-size: 22px;
+            text-align: center;
+        }
+
+        .nav-label {
+            transition: opacity .12s ease;
+        }
+
+        .sidebar.collapsed .nav-label {
+            opacity: 0;
+        }
+
+        /* =====================================================
+           MAIN
+        ===================================================== */
+
+        .main {
+            min-height: 100vh;
+
+            padding-top: var(--header-height);
+            padding-left: var(--sidebar-width);
+
+            transition: padding-left .22s ease;
+        }
+
+        .sidebar.collapsed ~ .main {
+            padding-left: var(--sidebar-collapsed);
+        }
+
+        .content {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 26px;
+        }
+
+        /* =====================================================
+           PAGE HEADER
+        ===================================================== */
+
+        .page-header {
+            display: flex;
+            align-items: center;
+
+            margin-bottom: 22px;
+        }
+
+        .page-title {
+            margin: 0;
+
+            font-size: 25px;
+            font-weight: 650;
+        }
+
+        .page-subtitle {
+            margin-top: 4px;
+
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .page-actions {
+            margin-left: auto;
+
+            display: flex;
+            gap: 8px;
+        }
+
+        /* =====================================================
+           CARDS
+        ===================================================== */
+
+        .card {
+            background: var(--surface);
+
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+
+            box-shadow: var(--shadow);
+
+            overflow: hidden;
+        }
+
+        .card-header {
+            min-height: 54px;
+
+            padding: 0 18px;
+
+            display: flex;
+            align-items: center;
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 18px;
+        }
+
+        /* =====================================================
+           BUTTONS
+        ===================================================== */
+
+        .button {
+            height: 38px;
+
+            padding: 0 14px;
+
+            border: 1px solid var(--border);
+            border-radius: 8px;
+
+            background: var(--surface);
+            color: var(--text);
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            gap: 7px;
+
+            transition: .18s ease;
+        }
+
+        .button:hover {
+            background: var(--surface-hover);
+        }
+
+        .button.primary {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        .button.primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .button.danger {
+            border-color: var(--danger);
+            background: var(--danger);
+            color: white;
+        }
+
+        /* =====================================================
+           METRICS
+        ===================================================== */
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+
+            margin-bottom: 18px;
+        }
+
+        .metric {
+            min-height: 145px;
+            padding: 18px;
+        }
+
+        .metric-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .metric-icon {
+            width: 42px;
+            height: 42px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 9px;
+
+            background: color-mix(
+                in srgb,
+                var(--primary) 12%,
+                transparent
+            );
+
+            color: var(--primary);
+
+            font-size: 24px;
+        }
+
+        .metric-label {
+            margin-top: 15px;
+
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .metric-value {
+            margin-top: 3px;
+
+            font-size: 26px;
+            font-weight: 650;
+        }
+
+        .metric-extra {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* =====================================================
+           ANIMATIONS
+        ===================================================== */
+
+        .fan-icon {
+            display: inline-block;
+            animation: fan-spin .65s linear infinite;
+        }
+
+        @keyframes fan-spin {
+            from {
+                transform: rotate(0);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .pulse {
+            animation: pulse 1.7s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .45;
+            }
+        }
+
+        .network-animation {
+            height: 32px;
+
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .network-bar {
+            width: 5px;
+
+            border-radius: 3px;
+
+            background: var(--success);
+
+            animation:
+                network-bars .7s ease-in-out infinite alternate;
+        }
+
+        .network-bar:nth-child(1) {
+            height: 10px;
+            animation-delay: -.5s;
+        }
+
+        .network-bar:nth-child(2) {
+            height: 18px;
+            animation-delay: -.3s;
+        }
+
+        .network-bar:nth-child(3) {
+            height: 25px;
+            animation-delay: -.1s;
+        }
+
+        .network-bar:nth-child(4) {
+            height: 15px;
+            animation-delay: -.4s;
+        }
+
+        .network-bar:nth-child(5) {
+            height: 22px;
+            animation-delay: -.2s;
+        }
+
+        @keyframes network-bars {
+            from {
+                transform: scaleY(.35);
+            }
+
+            to {
+                transform: scaleY(1);
+            }
+        }
+
+        .disk-icon {
+            animation: disk-pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes disk-pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* =====================================================
+           PROGRESS
+        ===================================================== */
+
+        .progress {
+            width: 100%;
+            height: 7px;
+
+            margin-top: 10px;
+
+            overflow: hidden;
+
+            border-radius: 99px;
+
+            background: var(--surface-hover);
+        }
+
+        .progress-value {
+            height: 100%;
+
+            border-radius: inherit;
+
+            background: var(--primary);
+
+            transition: width .5s ease;
+        }
+
+        .progress-value.warning {
+            background: var(--warning);
+        }
+
+        .progress-value.danger {
+            background: var(--danger);
+        }
+
+        /* =====================================================
+           GRIDS
+        ===================================================== */
+
+        .dashboard-grid {
+            display: grid;
+
+            grid-template-columns:
+                minmax(0, 2fr)
+                minmax(300px, 1fr);
+
+            gap: 18px;
+
+            margin-bottom: 18px;
+        }
+
+        .grid-2 {
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+
+            gap: 18px;
+        }
+
+        .grid-3 {
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
+
+            gap: 18px;
+        }
+
+        /* =====================================================
+           STATUS
+        ===================================================== */
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+
+            border-radius: 50%;
+        }
+
+        .status-online {
+            background: var(--success);
+        }
+
+        .status-warning {
+            background: var(--warning);
+        }
+
+        .status-offline {
+            background: var(--danger);
+        }
+
+        /* =====================================================
+           TABLE
+        ===================================================== */
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+
+            font-size: 14px;
+        }
+
+        th {
+            text-align: left;
+
+            background: var(--surface-hover);
+
+            color: var(--text-secondary);
+
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        th,
+        td {
+            padding: 13px 15px;
+
+            border-bottom: 1px solid var(--border);
+
+            white-space: nowrap;
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        /* =====================================================
+           CHART
+        ===================================================== */
+
+        .chart-container {
+            height: 280px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* =====================================================
+           LIST
+        ===================================================== */
+
+        .list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .list-item {
+            min-height: 58px;
+
+            display: flex;
+            align-items: center;
+
+            gap: 12px;
+
+            padding: 10px 0;
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        .list-item:last-child {
+            border-bottom: 0;
+        }
+
+        .list-icon {
+            width: 38px;
+            height: 38px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 8px;
+
+            background: var(--surface-hover);
+
+            font-size: 20px;
+        }
+
+        .list-content {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .list-title {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .list-description {
+            margin-top: 2px;
+
+            font-size: 12px;
+
+            color: var(--text-secondary);
+        }
+
+        /* =====================================================
+           FORM
+        ===================================================== */
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+
+            margin-bottom: 7px;
+
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .input,
+        .select {
+            width: 100%;
+            height: 40px;
+
+            padding: 0 11px;
+
+            border: 1px solid var(--border);
+            border-radius: 8px;
+
+            outline: none;
+
+            background: var(--surface);
+            color: var(--text);
+
+            transition: .18s ease;
+        }
+
+        .input:focus,
+        .select:focus {
+            border-color: var(--primary);
+
+            box-shadow:
+                0 0 0 3px
+                color-mix(
+                    in srgb,
+                    var(--primary) 12%,
+                    transparent
+                );
+        }
+
+        .switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 14px 0;
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        .switch {
+            position: relative;
+
+            width: 42px;
+            height: 23px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+
+            inset: 0;
+
+            border-radius: 99px;
+
+            background: var(--border);
+
+            transition: .2s;
+        }
+
+        .slider::before {
+            content: "";
+
+            position: absolute;
+
+            width: 17px;
+            height: 17px;
+
+            left: 3px;
+            top: 3px;
+
+            border-radius: 50%;
+
+            background: white;
+
+            transition: .2s;
+        }
+
+        .switch input:checked + .slider {
+            background: var(--primary);
+        }
+
+        .switch input:checked + .slider::before {
+            transform: translateX(19px);
+        }
+
+        /* =====================================================
+           TOAST
+        ===================================================== */
+
+        .toast-container {
+            position: fixed;
+
+            z-index: 2000;
+
+            right: 20px;
+            bottom: 20px;
+
+            display: flex;
+            flex-direction: column;
+
+            gap: 10px;
+        }
+
+        .toast {
+            min-width: 280px;
+
+            padding: 13px 15px;
+
+            display: flex;
+            align-items: center;
+
+            gap: 10px;
+
+            border: 1px solid var(--border);
+            border-radius: 9px;
+
+            background: var(--surface);
+
+            box-shadow: 0 8px 30px rgba(0, 0, 0, .15);
+
+            animation: toast-in .2s ease;
+        }
+
+        @keyframes toast-in {
+            from {
+                transform: translateY(15px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* =====================================================
+           MODAL
+        ===================================================== */
+
+        .modal-overlay {
+            position: fixed;
+
+            z-index: 3000;
+
+            inset: 0;
+
+            display: none;
+
+            align-items: center;
+            justify-content: center;
+
+            padding: 20px;
+
+            background: rgba(0, 0, 0, .55);
+
+            backdrop-filter: blur(3px);
+        }
+
+        .modal-overlay.visible {
+            display: flex;
+        }
+
+        .modal {
+            width: 100%;
+            max-width: 430px;
+
+            border: 1px solid var(--border);
+            border-radius: 12px;
+
+            background: var(--surface);
+
+            box-shadow:
+                0 20px 70px rgba(0, 0, 0, .25);
+
+            animation: modal-in .18s ease;
+        }
+
+        @keyframes modal-in {
+            from {
+                opacity: 0;
+                transform: scale(.96) translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 18px;
+
+            display: flex;
+            align-items: center;
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-weight: 600;
+        }
+
+        .modal-close {
+            margin-left: auto;
+        }
+
+        .modal-body {
+            padding: 20px;
+
+            color: var(--text-secondary);
+
+            line-height: 1.55;
+        }
+
+        .modal-footer {
+            padding: 14px 18px;
+
+            display: flex;
+            justify-content: flex-end;
+
+            gap: 8px;
+
+            border-top: 1px solid var(--border);
+        }
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        @media (max-width: 1100px) {
+            .metrics {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: var(--sidebar-width);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main,
+            .sidebar.collapsed ~ .main {
+                padding-left: 0;
+            }
+
+            .content {
+                padding: 18px;
+            }
+
+            .metrics,
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .logo span {
+                display: none;
+            }
+
+            .page-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .page-actions {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- =========================================================
+     HEADER
+========================================================= -->
+
+<header class="header">
+
+    <div class="header-left">
+
+        <button
+            class="icon-button"
+            id="menuButton"
+            title="Меню"
+        >
+            <span class="mdi mdi-menu"></span>
+        </button>
+
+        <div class="logo">
+
+            <div class="logo-icon">
+                <span class="mdi mdi-view-dashboard-outline"></span>
+            </div>
+
+            <span>Universal Dashboard</span>
+
+        </div>
+
+    </div>
+
+
+    <div class="header-right">
+
+        <button
+            class="icon-button"
+            title="Обновить"
+            onclick="showToast('Данные обновлены')"
+        >
+            <span class="mdi mdi-refresh"></span>
+        </button>
+
+        <button
+            class="icon-button"
+            id="themeButton"
+            title="Сменить тему"
+        >
+            <span class="mdi mdi-theme-light-dark"></span>
+        </button>
+
+        <button
+            class="icon-button"
+            title="Уведомления"
+            onclick="showToast('Новых уведомлений нет')"
+        >
+            <span class="mdi mdi-bell-outline"></span>
+        </button>
+
+        <button
+            class="icon-button"
+            title="Профиль"
+        >
+            <span class="mdi mdi-account-circle-outline"></span>
+        </button>
+
+    </div>
+
+</header>
+
+
+<!-- =========================================================
+     SIDEBAR
+========================================================= -->
+
+<aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-section">
+
+        <div class="sidebar-title">
+            Основное
+        </div>
+
+        <a
+            class="nav-item"
+            href="#/"
+            data-page="dashboard"
+        >
+            <span class="mdi mdi-view-dashboard-outline"></span>
+            <span class="nav-label">Dashboard</span>
+        </a>
+
+        <a
+            class="nav-item"
+            href="#/servers"
+            data-page="servers"
+        >
+            <span class="mdi mdi-server-outline"></span>
+            <span class="nav-label">Серверы</span>
+        </a>
+
+        <a
+            class="nav-item"
+            href="#/network"
+            data-page="network"
+        >
+            <span class="mdi mdi-router-network"></span>
+            <span class="nav-label">Сеть</span>
+        </a>
+
+        <a
+            class="nav-item"
+            href="#/statistics"
+            data-page="statistics"
+        >
+            <span class="mdi mdi-chart-line"></span>
+            <span class="nav-label">Статистика</span>
+        </a>
+
+    </div>
+
+
+    <div class="sidebar-section">
+
+        <div class="sidebar-title">
+            Система
+        </div>
+
+        <a
+            class="nav-item"
+            href="#/logs"
+            data-page="logs"
+        >
+            <span class="mdi mdi-file-document-outline"></span>
+            <span class="nav-label">Логи</span>
+        </a>
+
+        <a
+            class="nav-item"
+            href="#/users"
+            data-page="users"
+        >
+            <span class="mdi mdi-account-group-outline"></span>
+            <span class="nav-label">Пользователи</span>
+        </a>
+
+        <a
+            class="nav-item"
+            href="#/settings"
+            data-page="settings"
+        >
+            <span class="mdi mdi-cog-outline"></span>
+            <span class="nav-label">Настройки</span>
+        </a>
+
+    </div>
+
+</aside>
+
+
+<!-- =========================================================
+     MAIN
+========================================================= -->
+
+<main class="main">
+
+    <div class="content" id="app"></div>
+
+</main>
+
+
+<!-- =========================================================
+     TOAST
+========================================================= -->
+
+<div
+    class="toast-container"
+    id="toastContainer"
+></div>
+
+
+<!-- =========================================================
+     MODAL
+========================================================= -->
+
+<div
+    class="modal-overlay"
+    id="modal"
+>
+
+    <div class="modal">
+
+        <div class="modal-header">
+
+            <div
+                class="modal-title"
+                id="modalTitle"
+            >
+                Подтверждение
+            </div>
+
+            <button
+                class="icon-button modal-close"
+                onclick="closeModal()"
+            >
+                <span class="mdi mdi-close"></span>
+            </button>
+
+        </div>
+
+        <div
+            class="modal-body"
+            id="modalBody"
+        ></div>
+
+        <div class="modal-footer">
+
+            <button
+                class="button"
+                onclick="closeModal()"
+            >
+                Отмена
+            </button>
+
+            <button
+                class="button danger"
+                id="modalConfirm"
+            >
+                Подтвердить
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* ============================================================
+   GLOBAL
+============================================================ */
+
+const app =
+    document.getElementById("app");
+
+const sidebar =
+    document.getElementById("sidebar");
+
+
+/* ============================================================
+   TOAST
+============================================================ */
+
+function showToast(message) {
+
+    const container =
+        document.getElementById("toastContainer");
+
+    const toast =
+        document.createElement("div");
+
+    toast.className = "toast";
+
+    toast.innerHTML = `
+        <span
+            class="mdi mdi-check-circle-outline"
+            style="color:var(--success)"
+        ></span>
+
+        <span>${message}</span>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+
+        toast.style.opacity = "0";
+        toast.style.transform =
+            "translateY(10px)";
+
+        setTimeout(
+            () => toast.remove(),
+            200
+        );
+
+    }, 2500);
+}
+
+
+/* ============================================================
+   MODAL
+============================================================ */
+
+function openModal(
+    title,
+    message,
+    callback
+) {
+
+    document.getElementById(
+        "modalTitle"
+    ).textContent = title;
+
+    document.getElementById(
+        "modalBody"
+    ).innerHTML = message;
+
+    document.getElementById(
+        "modal"
+    ).classList.add("visible");
+
+    document.getElementById(
+        "modalConfirm"
+    ).onclick = () => {
+
+        closeModal();
+
+        if (callback)
+            callback();
+
+    };
+}
+
+
+function closeModal() {
+
+    document.getElementById(
+        "modal"
+    ).classList.remove("visible");
+
+}
+
+
+/* ============================================================
+   SIDEBAR
+============================================================ */
+
+document
+    .getElementById("menuButton")
+    .addEventListener("click", () => {
+
+        if (window.innerWidth <= 700) {
+
+            sidebar.classList.toggle(
+                "mobile-open"
+            );
+
+        } else {
+
+            sidebar.classList.toggle(
+                "collapsed"
+            );
+
+            localStorage.setItem(
+                "sidebar-collapsed",
+                sidebar.classList.contains(
+                    "collapsed"
+                )
+            );
+        }
+    });
+
+
+if (
+    localStorage.getItem(
+        "sidebar-collapsed"
+    ) === "true"
+) {
+
+    sidebar.classList.add(
+        "collapsed"
+    );
+}
+
+
+/* ============================================================
+   THEME
+============================================================ */
+
+const savedTheme =
+    localStorage.getItem(
+        "dashboard-theme"
+    );
+
+if (savedTheme) {
+
+    document.documentElement.dataset.theme =
+        savedTheme;
+
+}
+
+
+document
+    .getElementById("themeButton")
+    .addEventListener("click", () => {
+
+        const current =
+            document.documentElement.dataset.theme;
+
+        const next =
+            current === "dark"
+                ? "light"
+                : "dark";
+
+        document.documentElement.dataset.theme =
+            next;
+
+        localStorage.setItem(
+            "dashboard-theme",
+            next
+        );
+
+        redrawCharts();
+
+    });
+
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+
+const pages = {
+
+    dashboard: renderDashboard,
+
+    servers: renderServers,
+
+    network: renderNetwork,
+
+    statistics: renderStatistics,
+
+    logs: renderLogs,
+
+    users: renderUsers,
+
+    settings: renderSettings
+
+};
+
+
+function getPageFromHash() {
+
+    let hash =
+        location.hash.replace("#/", "");
+
+    if (!hash)
+        return "dashboard";
+
+    if (!pages[hash])
+        return "dashboard";
+
+    return hash;
+}
+
+
+function navigate() {
+
+    const page =
+        getPageFromHash();
+
+    /*
+     * Active menu item
+     */
+
+    document
+        .querySelectorAll(".nav-item")
+        .forEach(item => {
+
+            item.classList.toggle(
+                "active",
+                item.dataset.page === page
+            );
+
+        });
+
+
+    /*
+     * Render
+     */
+
+    pages[page]();
+
+
+    /*
+     * Close mobile menu
+     */
+
+    sidebar.classList.remove(
+        "mobile-open"
+    );
+
+
+    window.scrollTo({
+        top: 0,
+        behavior: "instant"
+    });
+}
+
+
+window.addEventListener(
+    "hashchange",
+    navigate
+);
+
+
+/* ============================================================
+   DASHBOARD
+============================================================ */
+
+function renderDashboard() {
+
+    app.innerHTML = `
+
+        <div class="page-header">
+
+            <div>
+
+                <h1 class="page-title">
+                    Dashboard
+                </h1>
+
+                <div class="page-subtitle">
+                    Состояние системы в реальном времени
+                </div>
+
+            </div>
+
+            <div class="page-actions">
+
+                <button
+                    class="button"
+                    onclick="showToast('Данные синхронизированы')"
+                >
+                    <span class="mdi mdi-sync"></span>
+                    Синхронизировать
+                </button>
+
+                <button
+                    class="button primary"
+                    onclick="
+                        openModal(
+                            'Перезапуск сервера',
+                            'Вы действительно хотите перезапустить сервер?<br><br>Текущие подключения будут разорваны.',
+                            () => showToast('Сервер отправлен на перезапуск')
+                        )
+                    "
+                >
+                    <span class="mdi mdi-power"></span>
+                    Перезапуск
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <section class="metrics">
+
+            ${metricCPU()}
+
+            ${metricFan()}
+
+            ${metricNetwork()}
+
+            ${metricDisk()}
+
+        </section>
+
+
+        <section class="dashboard-grid">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div class="card-title">
+                        CPU Load
+                    </div>
+
+                    <span
+                        style="margin-left:auto"
+                        class="status"
+                    >
+                        <span
+                            class="status-dot status-online pulse"
+                        ></span>
+                        Live
+                    </span>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="chart-container">
+                        <canvas id="cpuChart"></canvas>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div class="card-title">
+                        Состояние системы
+                    </div>
+
+                </div>
+
+                <div class="card-body">
+
+                    ${systemProgress(
+                        "CPU",
+                        "42%",
+                        42
+                    )}
+
+                    ${systemProgress(
+                        "RAM",
+                        "68%",
+                        68
+                    )}
+
+                    ${systemProgress(
+                        "Disk",
+                        "72%",
+                        72,
+                        "warning"
+                    )}
+
+                    <div style="
+                        margin-top:20px;
+                        padding-top:15px;
+                        border-top:1px solid var(--border)
+                    ">
+
+                        <span class="status">
+
+                            <span
+                                class="status-dot status-online pulse"
+                            ></span>
+
+                            Все системы работают нормально
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <div class="card-title">
+                    Устройства
+                </div>
+
+                <button
+                    class="icon-button"
+                    style="margin-left:auto"
+                    onclick="showToast('Список обновлён')"
+                >
+                    <span class="mdi mdi-refresh"></span>
+                </button>
+
+            </div>
+
+            ${deviceTable()}
+
+        </div>
+    `;
+
+    initCPUChart();
+
+    startDashboardMetrics();
+}
+
+
+/* ============================================================
+   METRIC HELPERS
+============================================================ */
+
+function metricCPU() {
+
+    return `
+        <div class="card metric">
+
+            <div class="metric-top">
+
+                <div class="metric-icon">
+                    <span class="mdi mdi-chip"></span>
+                </div>
+
+                <span class="status">
+                    <span class="status-dot status-online"></span>
+                    Online
+                </span>
+
+            </div>
+
+            <div class="metric-label">
+                CPU Load
+            </div>
+
+            <div
+                class="metric-value"
+                id="cpuValue"
+            >
+                42%
+            </div>
+
+            <div class="progress">
+
+                <div
+                    id="cpuProgress"
+                    class="progress-value"
+                    style="width:42%"
+                ></div>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+function metricFan() {
+
+    return `
+        <div class="card metric">
+
+            <div class="metric-top">
+
+                <div class="metric-icon">
+
+                    <span
+                        id="fanIcon"
+                        class="mdi mdi-fan fan-icon"
+                    ></span>
+
+                </div>
+
+                <span class="status">
+
+                    <span class="status-dot status-online"></span>
+                    Running
+
+                </span>
+
+            </div>
+
+            <div class="metric-label">
+                CPU Fan
+            </div>
+
+            <div class="metric-value">
+
+                <span id="rpmValue">
+                    1240
+                </span>
+
+                <span class="metric-extra">
+                    RPM
+                </span>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+function metricNetwork() {
+
+    return `
+        <div class="card metric">
+
+            <div class="metric-top">
+
+                <div class="metric-icon">
+
+                    <div class="network-animation">
+
+                        <div class="network-bar"></div>
+                        <div class="network-bar"></div>
+                        <div class="network-bar"></div>
+                        <div class="network-bar"></div>
+                        <div class="network-bar"></div>
+
+                    </div>
+
+                </div>
+
+                <span class="status">
+
+                    <span class="status-dot status-online"></span>
+                    Connected
+
+                </span>
+
+            </div>
+
+            <div class="metric-label">
+                Network
+            </div>
+
+            <div class="metric-value">
+
+                <span id="networkValue">
+                    82
+                </span>
+
+                <span class="metric-extra">
+                    Mbps
+                </span>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+function metricDisk() {
+
+    return `
+        <div class="card metric">
+
+            <div class="metric-top">
+
+                <div class="metric-icon">
+
+                    <span
+                        class="mdi mdi-harddisk disk-icon"
+                    ></span>
+
+                </div>
+
+                <span class="status">
+
+                    <span class="status-dot status-warning"></span>
+                    72%
+
+                </span>
+
+            </div>
+
+            <div class="metric-label">
+                Storage
+            </div>
+
+            <div class="metric-value">
+                7.2 TB
+            </div>
+
+            <div class="progress">
+
+                <div
+                    class="progress-value warning"
+                    style="width:72%"
+                ></div>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+function systemProgress(
+    label,
+    value,
+    percent,
+    type = ""
+) {
+
+    return `
+        <div style="margin-bottom:18px">
+
+            <div style="
+                display:flex;
+                justify-content:space-between
+            ">
+
+                <span>${label}</span>
+
+                <span style="
+                    color:var(--text-secondary)
+                ">
+                    ${value}
+                </span>
+
+            </div>
+
+            <div class="progress">
+
+                <div
+                    class="progress-value ${type}"
+                    style="width:${percent}%"
+                ></div>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+/* ============================================================
+   DEVICE TABLE
+============================================================ */
+
+function deviceTable() {
+
+    return `
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                <tr>
+
+                    <th>Устройство</th>
+                    <th>Тип</th>
+                    <th>IP</th>
+                    <th>Статус</th>
+                    <th>Нагрузка</th>
+                    <th></th>
+
+                </tr>
+
+                </thead>
+
+                <tbody>
+
+                ${deviceRow(
+                    "mdi-server",
+                    "Server-01",
+                    "Server",
+                    "192.168.1.10",
+                    "online",
+                    "42%"
+                )}
+
+                ${deviceRow(
+                    "mdi-router",
+                    "Router",
+                    "Network",
+                    "192.168.1.1",
+                    "online",
+                    "18%"
+                )}
+
+                ${deviceRow(
+                    "mdi-desktop-tower-monitor",
+                    "Workstation",
+                    "PC",
+                    "192.168.1.20",
+                    "warning",
+                    "91%"
+                )}
+
+                </tbody>
+
+            </table>
+
+        </div>
+    `;
+}
+
+
+function deviceRow(
+    icon,
+    name,
+    type,
+    ip,
+    status,
+    load
+) {
+
+    const statusText =
+        status === "online"
+            ? "Online"
+            : "Warning";
+
+    return `
+        <tr>
+
+            <td>
+                <span class="mdi ${icon}"></span>
+                ${name}
+            </td>
+
+            <td>${type}</td>
+
+            <td>${ip}</td>
+
+            <td>
+
+                <span class="status">
+
+                    <span
+                        class="status-dot status-${status}"
+                    ></span>
+
+                    ${statusText}
+
+                </span>
+
+            </td>
+
+            <td>${load}</td>
+
+            <td>
+
+                <button
+                    class="icon-button"
+                    onclick="
+                        showToast('Открытие ${name}')
+                    "
+                >
+                    <span class="mdi mdi-open-in-new"></span>
+                </button>
+
+            </td>
+
+        </tr>
+    `;
+}
+
+
+/* ============================================================
+   SERVERS
+============================================================ */
+
+function renderServers() {
+
+    app.innerHTML = `
+
+        <div class="page-header">
+
+            <div>
+
+                <h1 class="page-title">
+                    Серверы
+                </h1>
+
+                <div class="page-subtitle">
+                    Управление серверами и виртуальными машинами
+                </div>
+
+            </div>
+
+            <div class="page-actions">
+
+                <button
+                    class="button"
+                    onclick="showToast('Список серверов обновлён')"
+                >
+                    <span class="mdi mdi-refresh"></span>
+                    Обновить
+                </button>
+
+                <button
+                    class="button primary"
+                    onclick="showToast('Открытие формы добавления')"
+                >
+                    <span class="mdi mdi-plus"></span>
+                    Добавить сервер
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <section class="metrics">
+
+            <div class="card metric">
+
+                <div class="metric-icon">
+                    <span class="mdi mdi-server"></span>
+                </div>
+
+                <div class="metric-label">
+                    Всего серверов
+                </div>
+
+                <div class="metric-value">
+                    12
+                </div>
+
+            </div>
+
+
+            <div class="card metric">
+
+                <div class="metric-icon">
+                    <span
+                        class="mdi mdi-server-network"
+                        style="color:var(--success)"
+                    ></span>
+                </div>
+
+                <div class="metric-label">
+                    Online
+                </div>
+
+                <div class="metric-value">
+                    10
+                </div>
+
+            </div>
+
+
+            <div class="card metric">
+
+                <div class="metric-icon">
+                    <span
+                        class="mdi mdi-alert-outline"
+                        style="color:var(--warning)"
+                    ></span>
+                </div>
+
+                <div class="metric-label">
+                    Warning
+                </div>
+
+                <div class="metric-value">
+                    1
+                </div>
+
+            </div>
+
+
+            <div class="card metric">
+
+                <div class="metric-icon">
+                    <span
+                        class="mdi mdi-server-off"
+                        style="color:var(--danger)"
+                    ></span>
+                </div>
+
+                <div class="metric-label">
+                    Offline
+                </div>
+
+                <div class="metric-value">
+                    1
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <div class="card-title">
+                    Список серверов
+                </div>
+
+            </div>
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                    <tr>
+                        <th>Имя</th>
+                        <th>IP</th>
+                        <th>CPU</th>
+                        <th>RAM</th>
+                        <th>Storage</th>
+                        <th>Статус</th>
+                        <th></th>
+                    </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                    <tr>
+                        <td>server-01</td>
+                        <td>192.168.1.10</td>
+                        <td>42%</td>
+                        <td>64%</td>
+                        <td>72%</td>
+                        <td>
+                            <span class="status">
+                                <span class="status-dot status-online"></span>
+                                Online
+                            </span>
+                        </td>
+                        <td>
+                            <button
+                                class="icon-button"
+                                onclick="showToast('server-01')"
+                            >
+                                <span class="mdi mdi-open-in-new"></span>
+                            </button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>server-02</td>
+                        <td>192.168.1.11</td>
+                        <td>31%</td>
+                        <td>48%</td>
+                        <td>61%</td>
+                        <td>
+                            <span class="status">
+                                <span class="status-dot status-online"></span>
+                                Online
+                            </span>
+                        </td>
+                        <td>
+                            <button class="icon-button">
+                                <span class="mdi mdi-open-in-new"></span>
+                            </button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>ai-server</td>
+                        <td>192.168.1.50</td>
+                        <td>91%</td>
+                        <td>87%</td>
+                        <td>74%</td>
+                        <td>
+                            <span class="status">
+                                <span class="status-dot status-warning"></span>
+                                Warning
+                            </span>
+                        </td>
+                        <td>
+                            <button class="icon-button">
+                                <span class="mdi mdi-open-in-new"></span>
+                            </button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>backup</td>
+                        <td>192.168.1.60</td>
+                        <td>0%</td>
+                        <td>0%</td>
+                        <td>0%</td>
+                        <td>
+                            <span class="status">
+                                <span class="status-dot status-offline"></span>
+                                Offline
+                            </span>
+                        </td>
+                        <td>
+                            <button class="icon-button">
+                                <span class="mdi mdi-open-in-new"></span>
+                            </button>
+                        </td>
+                    </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+/* ============================================================
+   NETWORK
+============================================================ */
+
+function renderNetwork() {
+
+    app.innerHTML = `
+
+        <div class="page-header">
+
+            <div>
+
+                <h1 class="page-title">
+                    Сеть
+                </h1>
+
+                <div class="page-subtitle">
+                    Мониторинг сетевых интерфейсов и соединений
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <section class="metrics">
+
+            <div class="card metric">
+
+                <div class="metric-icon">
+                    <span class="mdi mdi-download"></span>
+                </div>
+
+                <div class="metric-label">
+                    Download
+                </div>
+
+                <div class="metric-value">
+                    82 Mbps
+                </div>
+
+            </div>
+
+
+            <div class="card metric">
+
+                <div class="metric-icon">
+                    <span class="mdi mdi-upload"></span>
+                </div>
+
+                <div class="metric-label">
+                    Upload
+                </div>
+
+                <div class="metric-value">
+                    31 Mbps
+                </div>
+
+            </div>
+
+
+            <div class="card metric">
+
+                <div class="metric-icon">
+                    <span class="mdi mdi-lan-connect"></span>
+                </div>
+
+                <div class="metric-label">
+                    Connections
+                </div>
+
+                <div class="metric-value">
+                    142
+                </div>
+
+            </div>
+
+
+            <div class="card metric">
+
+                <div class="metric-icon">
+                    <span class="mdi mdi-alert-outline"></span>
+                </div>
+
+                <div class="metric-label">
+                    Packet Loss
+                </div>
+
+                <div class="metric-value">
+                    0.02%
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <div class="grid-2">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div class="card-title">
+                        Интерфейсы
+                    </div>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="list">
+
+                        ${networkInterface(
+                            "eth0",
+                            "Ethernet",
+                            "1 Gbps",
+                            "82 Mbps",
+                            "online"
+                        )}
+
+                        ${networkInterface(
+                            "wg0",
+                            "WireGuard",
+                            "1 Gbps",
+                            "24 Mbps",
+                            "online"
+                        )}
+
+                        ${networkInterface(
+                            "docker0",
+                            "Docker",
+                            "Virtual",
+                            "12 Mbps",
+                            "online"
+                        )}
+
+                        ${networkInterface(
+                            "eth1",
+                            "Ethernet",
+                            "1 Gbps",
+                            "0 Mbps",
+                            "offline"
+                        )}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div class="card-title">
+                        VPN
+                    </div>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="list">
+
+                        ${vpnItem(
+                            "wg0",
+                            "WireGuard DE",
+                            "10.8.1.5",
+                            "online"
+                        )}
+
+                        ${vpnItem(
+                            "wg1",
+                            "WireGuard NL",
+                            "10.8.1.8",
+                            "online"
+                        )}
+
+                        ${vpnItem(
+                            "wg2",
+                            "WireGuard US",
+                            "10.8.1.12",
+                            "warning"
+                        )}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+function networkInterface(
+    name,
+    description,
+    speed,
+    traffic,
+    status
+) {
+
+    return `
+        <div class="list-item">
+
+            <div class="list-icon">
+                <span class="mdi mdi-ethernet"></span>
+            </div>
+
+            <div class="list-content">
+
+                <div class="list-title">
+                    ${name}
+                </div>
+
+                <div class="list-description">
+                    ${description} · ${speed}
+                </div>
+
+            </div>
+
+            <div style="text-align:right">
+
+                <div>
+                    ${traffic}
+                </div>
+
+                <span class="status">
+
+                    <span
+                        class="status-dot status-${status}"
+                    ></span>
+
+                </span>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+function vpnItem(
+    name,
+    description,
+    ip,
+    status
+) {
+
+    return `
+        <div class="list-item">
+
+            <div class="list-icon">
+
+                <span class="mdi mdi-vpn"></span>
+
+            </div>
+
+            <div class="list-content">
+
+                <div class="list-title">
+                    ${description}
+                </div>
+
+                <div class="list-description">
+                    ${name} · ${ip}
+                </div>
+
+            </div>
+
+            <span class="status">
+
+                <span
+                    class="status-dot status-${status}"
+                ></span>
+
+                ${status === "online"
+                    ? "Connected"
+                    : "Warning"}
+
+            </span>
+
+        </div>
+    `;
+}
+
+
+/* ============================================================
+   STATISTICS
+============================================================ */
+
+function renderStatistics() {
+
+    app.innerHTML = `
+
+        <div class="page-header">
+
+            <div>
+
+                <h1 class="page-title">
+                    Статистика
+                </h1>
+
+                <div class="page-subtitle">
+                    История нагрузки и потребления ресурсов
+                </div>
+
+            </div>
+
+            <div class="page-actions">
+
+                <select
+                    class="select"
+                    style="width:150px"
+                    onchange="showToast('Период изменён')"
+                >
+
+                    <option>Последний час</option>
+                    <option>Сегодня</option>
+                    <option>7 дней</option>
+                    <option>30 дней</option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <div class="grid-2">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div class="card-title">
+                        CPU
+                    </div>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="chart-container">
+                        <canvas id="statsCpu"></canvas>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div class="card-title">
+                        Network
+                    </div>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="chart-container">
+                        <canvas id="statsNetwork"></canvas>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div
+            class="grid-3"
+            style="margin-top:18px"
+        >
+
+            <div class="card metric">
+
+                <div class="metric-label">
+                    Средняя нагрузка CPU
+                </div>
+
+                <div class="metric-value">
+                    47.2%
+                </div>
+
+                <div class="metric-extra">
+                    за последние 24 часа
+                </div>
+
+            </div>
+
+
+            <div class="card metric">
+
+                <div class="metric-label">
+                    Средний трафик
+                </div>
+
+                <div class="metric-value">
+                    63 Mbps
+                </div>
+
+                <div class="metric-extra">
+                    за последние 24 часа
+                </div>
+
+            </div>
+
+
+            <div class="card metric">
+
+                <div class="metric-label">
+                    Uptime
+                </div>
+
+                <div class="metric-value">
+                    99.98%
+                </div>
+
+                <div class="metric-extra">
+                    последние 30 дней
+                </div>
+
+            </div>
+
+        </div>
+    `;
+
+    initSimpleChart(
+        "statsCpu",
+        20,
+        85
+    );
+
+    initSimpleChart(
+        "statsNetwork",
+        10,
+        95
+    );
+}
+
+
+/* ============================================================
+   SETTINGS
+============================================================ */
+
+function renderSettings() {
+
+    app.innerHTML = `
+
+        <div class="page-header">
+
+            <div>
+
+                <h1 class="page-title">
+                    Настройки
+                </h1>
+
+                <div class="page-subtitle">
+                    Конфигурация интерфейса и системы
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="grid-2">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div class="card-title">
+                        Общие настройки
+                    </div>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Название системы
+                        </label>
+
+                        <input
+                            class="input"
+                            value="Universal Dashboard"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Язык
+                        </label>
+
+                        <select class="select">
+
+                            <option>Русский</option>
+                            <option>English</option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Часовой пояс
+                        </label>
+
+                        <select class="select">
+
+                            <option>Europe/Moscow</option>
+                            <option>Europe/London</option>
+                            <option>UTC</option>
+
+                        </select>
+
+                    </div>
+
+
+                    <button
+                        class="button primary"
+                        onclick="
+                            showToast('Настройки сохранены')
+                        "
+                    >
+                        <span class="mdi mdi-content-save"></span>
+                        Сохранить
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div class="card-title">
+                        Интерфейс
+                    </div>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="switch-row">
+
+                        <div>
+
+                            <div>
+                                Автоматическая тема
+                            </div>
+
+                            <div class="list-description">
+                                Следовать системной теме
+                            </div>
+
+                        </div>
+
+                        <label class="switch">
+
+                            <input
+                                type="checkbox"
+                                checked
+                            >
+
+                            <span class="slider"></span>
+
+                        </label>
+
+                    </div>
+
+
+                    <div class="switch-row">
+
+                        <div>
+
+                            <div>
+                                Анимации
+                            </div>
+
+                            <div class="list-description">
+                                Анимация элементов интерфейса
+                            </div>
+
+                        </div>
+
+                        <label class="switch">
+
+                            <input
+                                type="checkbox"
+                                checked
+                            >
+
+                            <span class="slider"></span>
+
+                        </label>
+
+                    </div>
+
+
+                    <div class="switch-row">
+
+                        <div>
+
+                            <div>
+                                Уведомления
+                            </div>
+
+                            <div class="list-description">
+                                Показывать системные уведомления
+                            </div>
+
+                        </div>
+
+                        <label class="switch">
+
+                            <input
+                                type="checkbox"
+                                checked
+                            >
+
+                            <span class="slider"></span>
+
+                        </label>
+
+                    </div>
+
+
+                    <div class="switch-row">
+
+                        <div>
+
+                            <div>
+                                Live monitoring
+                            </div>
+
+                            <div class="list-description">
+                                Автоматически обновлять данные
+                            </div>
+
+                        </div>
+
+                        <label class="switch">
+
+                            <input
+                                type="checkbox"
+                                checked
+                            >
+
+                            <span class="slider"></span>
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+/* ============================================================
+   LOGS
+============================================================ */
+
+function renderLogs() {
+
+    app.innerHTML = `
+
+        <div class="page-header">
+
+            <div>
+
+                <h1 class="page-title">
+                    Логи
+                </h1>
+
+                <div class="page-subtitle">
+                    Системные события
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <div class="card-title">
+                    Последние события
+                </div>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="list">
+
+                    ${logItem(
+                        "mdi-information-outline",
+                        "Интерфейс запущен",
+                        "Сегодня, 00:12:41",
+                        "success"
+                    )}
+
+                    ${logItem(
+                        "mdi-server",
+                        "Server-01 подключился",
+                        "Сегодня, 00:11:23",
+                        "success"
+                    )}
+
+                    ${logItem(
+                        "mdi-alert-outline",
+                        "Высокая загрузка AI Server",
+                        "Сегодня, 00:09:12",
+                        "warning"
+                    )}
+
+                    ${logItem(
+                        "mdi-refresh",
+                        "Конфигурация обновлена",
+                        "Сегодня, 00:04:51",
+                        "success"
+                    )}
+
+                </div>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+function logItem(
+    icon,
+    text,
+    time,
+    type
+) {
+
+    return `
+        <div class="list-item">
+
+            <div class="list-icon">
+
+                <span
+                    class="mdi ${icon}"
+                    style="color:var(--${type === "warning"
+                        ? "warning"
+                        : "primary"})"
+                ></span>
+
+            </div>
+
+            <div class="list-content">
+
+                <div class="list-title">
+                    ${text}
+                </div>
+
+                <div class="list-description">
+                    ${time}
+                </div>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+/* ============================================================
+   USERS
+============================================================ */
+
+function renderUsers() {
+
+    app.innerHTML = `
+
+        <div class="page-header">
+
+            <div>
+
+                <h1 class="page-title">
+                    Пользователи
+                </h1>
+
+                <div class="page-subtitle">
+                    Управление доступом
+                </div>
+
+            </div>
+
+            <button
+                class="button primary"
+                onclick="
+                    showToast('Форма добавления пользователя')
+                "
+            >
+                <span class="mdi mdi-account-plus"></span>
+                Добавить
+            </button>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                    <tr>
+                        <th>Пользователь</th>
+                        <th>Роль</th>
+                        <th>Последний вход</th>
+                        <th>Статус</th>
+                    </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                    <tr>
+                        <td>admin</td>
+                        <td>Administrator</td>
+                        <td>Сегодня 00:02</td>
+                        <td>
+                            <span class="status">
+                                <span class="status-dot status-online"></span>
+                                Active
+                            </span>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>operator</td>
+                        <td>Operator</td>
+                        <td>Вчера 18:41</td>
+                        <td>
+                            <span class="status">
+                                <span class="status-dot status-online"></span>
+                                Active
+                            </span>
+                        </td>
+                    </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+/* ============================================================
+   NETWORK / DASHBOARD LIVE DATA
+============================================================ */
+
+let dashboardInterval = null;
+
+function startDashboardMetrics() {
+
+    if (dashboardInterval)
+        clearInterval(dashboardInterval);
+
+    dashboardInterval =
+        setInterval(() => {
+
+            if (
+                getPageFromHash() !==
+                "dashboard"
+            ) {
+                clearInterval(
+                    dashboardInterval
+                );
+
+                dashboardInterval = null;
+
+                return;
+            }
+
+
+            const cpu =
+                Math.round(
+                    25 + Math.random() * 60
+                );
+
+            const rpm =
+                Math.round(
+                    700 + cpu * 20
+                );
+
+            const network =
+                Math.round(
+                    30 + Math.random() * 80
+                );
+
+
+            const cpuValue =
+                document.getElementById(
+                    "cpuValue"
+                );
+
+            const cpuProgress =
+                document.getElementById(
+                    "cpuProgress"
+                );
+
+            const rpmValue =
+                document.getElementById(
+                    "rpmValue"
+                );
+
+            const fanIcon =
+                document.getElementById(
+                    "fanIcon"
+                );
+
+            const networkValue =
+                document.getElementById(
+                    "networkValue"
+                );
+
+
+            if (!cpuValue)
+                return;
+
+
+            cpuValue.textContent =
+                `${cpu}%`;
+
+            cpuProgress.style.width =
+                `${cpu}%`;
+
+            rpmValue.textContent =
+                rpm;
+
+            networkValue.textContent =
+                network;
+
+
+            fanIcon.style.animationDuration =
+                `${Math.max(
+                    .18,
+                    2 - rpm / 2200
+                )}s`;
+
+        }, 1500);
+}
+
+
+/* ============================================================
+   CPU CHART
+============================================================ */
+
+let charts = [];
+
+function initCPUChart() {
+
+    const canvas =
+        document.getElementById(
+            "cpuChart"
+        );
+
+    if (!canvas)
+        return;
+
+    initSimpleChart(
+        "cpuChart",
+        15,
+        90
+    );
+}
+
+
+function initSimpleChart(
+    id,
+    min,
+    max
+) {
+
+    const canvas =
+        document.getElementById(id);
+
+    if (!canvas)
+        return;
+
+    const ctx =
+        canvas.getContext("2d");
+
+    let values = [];
+
+    for (let i = 0; i < 60; i++) {
+
+        values.push(
+            min +
+            Math.random() *
+            (max - min)
+        );
+
+    }
+
+
+    function resize() {
+
+        const rect =
+            canvas.getBoundingClientRect();
+
+        const ratio =
+            window.devicePixelRatio || 1;
+
+        canvas.width =
+            rect.width * ratio;
+
+        canvas.height =
+            rect.height * ratio;
+
+        ctx.setTransform(
+            ratio,
+            0,
+            0,
+            ratio,
+            0,
+            0
+        );
+
+    }
+
+
+    function draw() {
+
+        const width =
+            canvas.clientWidth;
+
+        const height =
+            canvas.clientHeight;
+
+
+        ctx.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        const styles =
+            getComputedStyle(
+                document.documentElement
+            );
+
+        const border =
+            styles.getPropertyValue(
+                "--border"
+            );
+
+        const primary =
+            styles.getPropertyValue(
+                "--primary"
+            );
+
+
+        ctx.strokeStyle =
+            border;
+
+        ctx.lineWidth = 1;
+
+
+        for (let i = 1; i < 5; i++) {
+
+            const y =
+                height * i / 5;
+
+            ctx.beginPath();
+
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+
+            ctx.stroke();
+
+        }
+
+
+        ctx.beginPath();
+
+
+        values.forEach(
+            (value, index) => {
+
+                const x =
+                    index *
+                    width /
+                    (values.length - 1);
+
+                const y =
+                    height -
+                    (value - min) /
+                    (max - min) *
+                    height;
+
+
+                if (index === 0)
+                    ctx.moveTo(x, y);
+                else
+                    ctx.lineTo(x, y);
+
+            }
+        );
+
+
+        ctx.strokeStyle =
+            primary;
+
+        ctx.lineWidth = 2;
+
+        ctx.stroke();
+
+
+        ctx.lineTo(
+            width,
+            height
+        );
+
+        ctx.lineTo(
+            0,
+            height
+        );
+
+        ctx.closePath();
+
+        ctx.globalAlpha = .08;
+
+        ctx.fillStyle =
+            primary;
+
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
+
+    }
+
+
+    function update() {
+
+        let next =
+            values[
+                values.length - 1
+            ] +
+            (Math.random() - .5) * 15;
+
+
+        next =
+            Math.max(
+                min,
+                Math.min(max, next)
+            );
+
+
+        values.push(next);
+        values.shift();
+
+        draw();
+
+    }
+
+
+    resize();
+    draw();
+
+    window.addEventListener(
+        "resize",
+        () => {
+
+            resize();
+            draw();
+
+        }
+    );
+
+    const interval =
+        setInterval(
+            update,
+            700
+        );
+
+    charts.push({
+        interval,
+        canvas,
+        draw
+    });
+}
+
+
+function redrawCharts() {
+
+    charts.forEach(
+        chart => chart.draw()
+    );
+
+}
+
+
+/* ============================================================
+   INITIAL ROUTE
+============================================================ */
+
+if (!location.hash) {
+
+    history.replaceState(
+        null,
+        "",
+        "#/"
+    );
+
+}
+
+navigate();
+
+</script>
+
+</body>
+</html>
+

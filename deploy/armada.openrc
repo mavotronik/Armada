@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+
+name="armada"
+description="Armada node agent"
+command="/usr/local/bin/armada"
+command_args="-listen :8080"
+command_background=true
+pidfile="/run/${RC_SVCNAME}.pid"
+output_log="/var/log/armada.log"
+error_log="/var/log/armada.log"
+
+depend() {
+	need net
+	after firewall
+}
