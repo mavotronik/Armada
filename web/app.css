@@ -887,6 +887,42 @@ canvas {
     background: var(--primary);
 }
 
+.switch.switch-success input:checked + .slider {
+    background: var(--success);
+}
+
+.settings-advanced {
+    margin-top: 18px;
+}
+
+.settings-advanced > summary {
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    list-style: none;
+    user-select: none;
+}
+
+.settings-advanced > summary::-webkit-details-marker {
+    display: none;
+}
+
+.settings-advanced > summary::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 8px;
+    transition: transform .15s ease;
+}
+
+.settings-advanced[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.settings-advanced-body {
+    margin-top: 14px;
+}
+
 .switch input:checked + .slider::before {
     transform: translateX(19px);
 }

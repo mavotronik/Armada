@@ -7,6 +7,9 @@ let gpioGridBuilt = false;
 let cpuHistory = [];
 let charts = [];
 let consoleSession = null;
+let autoRefreshEnabled = true;
+let appSettings = { systemName: "Armada", autoRefresh: true };
+let modalConfirmHandler = null;
 
 function showToast(message) {
     const container = document.getElementById("toastContainer");
@@ -49,19 +52,115 @@ document.getElementById("themeButton").addEventListener("click", () => {
 });
 
 document.getElementById("refreshButton").addEventListener("click", () => {
-    if (getPageFromHash() === "dashboard") {
+    const page = getPageFromHash();
+    if (page === "dashboard") {
         fetchHost(true);
-    } else if (getPageFromHash() === "gpio") {
+    } else if (page === "gpio") {
         fetchGPIO(true);
+    } else if (page === "settings") {
+        loadSettings(true);
     } else {
         showToast("Обновлено");
     }
 });
 
+const modalEl = document.getElementById("modal");
+document.getElementById("modalClose").addEventListener("click", closeModal);
+document.getElementById("modalCancel").addEventListener("click", closeModal);
+document.getElementById("modalConfirm").addEventListener("click", () => {
+    if (modalConfirmHandler) modalConfirmHandler();
+    closeModal();
+});
+modalEl.addEventListener("click", ev => {
+    if (ev.target === modalEl) closeModal();
+});
+
+function openModal(title, bodyHtml, onConfirm) {
+    document.getElementById("modalTitle").textContent = title;
+    document.getElementById("modalBody").innerHTML = bodyHtml;
+    modalConfirmHandler = onConfirm;
+    modalEl.classList.add("visible");
+}
+
+function closeModal() {
+    modalEl.classList.remove("visible");
+    modalConfirmHandler = null;
+}
+
+function applyAppSettings() {
+    const title = appSettings.systemName || "Armada";
+    document.getElementById("logoTitle").textContent = title;
+    document.title = title;
+}
+
+async function loadSettings(manual) {
+    try {
+        const res = await fetch("/api/v1/settings", { cache: "no-store" });
+        if (!res.ok) throw new Error(res.statusText);
+        appSettings = await res.json();
+        autoRefreshEnabled = !!appSettings.autoRefresh;
+        applyAppSettings();
+        if (getPageFromHash() === "settings") {
+            applySettingsForm();
+        }
+        if (manual) showToast("Настройки обновлены");
+    } catch {
+        if (manual) showToast("Ошибка загрузки настроек");
+    }
+}
+
+async function saveSettings() {
+    const nameInput = document.getElementById("settingsSystemName");
+    const autoInput = document.getElementById("settingsAutoRefresh");
+    if (!nameInput || !autoInput) return;
+    const body = {
+        systemName: nameInput.value.trim(),
+        autoRefresh: autoInput.checked,
+    };
+    try {
+        const res = await fetch("/api/v1/settings", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || res.statusText);
+        }
+        appSettings = body;
+        autoRefreshEnabled = body.autoRefresh;
+        applyAppSettings();
+        showToast("Настройки сохранены");
+        const page = getPageFromHash();
+        if (page === "dashboard") {
+            startHostPoll();
+        } else if (page === "gpio") {
+            startGPIOPoll();
+        }
+    } catch (e) {
+        showToast(e.message || "Ошибка сохранения");
+    }
+}
+
+async function resetGPIODatabase() {
+    try {
+        const res = await fetch("/api/v1/gpio/db/reset", { method: "POST" });
+        if (!res.ok) throw new Error(await res.text() || res.statusText);
+        showToast("База GPIO сброшена");
+        if (getPageFromHash() === "gpio") {
+            gpioGridBuilt = false;
+            fetchGPIO(false);
+        }
+    } catch (e) {
+        showToast(e.message || "Ошибка сброса GPIO");
+    }
+}
+
 const pages = {
     dashboard: renderDashboard,
     console: renderConsole,
     gpio: renderGPIO,
+    settings: renderSettings,
 };
 
 function getPageFromHash() {
@@ -71,7 +170,7 @@ function getPageFromHash() {
 
 function navigate() {
     stopHostPoll();
-    stopGPIOPoll();
+    stopGPIOPollFull();
     teardownConsole();
 
     const page = getPageFromHash();
@@ -313,6 +412,12 @@ function renderDashboard() {
 
     initCpuChartCanvas();
     fetchHost(false);
+    startHostPoll();
+}
+
+function startHostPoll() {
+    stopHostPoll();
+    if (!autoRefreshEnabled) return;
     hostPollInterval = setInterval(() => {
         if (getPageFromHash() !== "dashboard") {
             stopHostPoll();
@@ -341,6 +446,10 @@ function stopGPIOPoll() {
         clearInterval(gpioPollInterval);
         gpioPollInterval = null;
     }
+}
+
+function stopGPIOPollFull() {
+    stopGPIOPoll();
     gpioGridBuilt = false;
 }
 
@@ -362,6 +471,12 @@ function renderGPIO() {
         </div>`;
 
     fetchGPIO(false);
+    startGPIOPoll();
+}
+
+function startGPIOPoll() {
+    stopGPIOPoll();
+    if (!autoRefreshEnabled) return;
     gpioPollInterval = setInterval(() => {
         if (getPageFromHash() !== "gpio") {
             stopGPIOPoll();
@@ -602,6 +717,73 @@ function escapeHtml(s) {
         .replace(/"/g, "&quot;");
 }
 
+function applySettingsForm() {
+    const nameInput = document.getElementById("settingsSystemName");
+    const autoInput = document.getElementById("settingsAutoRefresh");
+    if (!nameInput || !autoInput) return;
+    nameInput.value = appSettings.systemName || "Armada";
+    autoInput.checked = !!appSettings.autoRefresh;
+}
+
+function renderSettings() {
+    app.innerHTML = `
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Настройки</h1>
+                <div class="page-subtitle">Конфигурация интерфейса и системы</div>
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Общие настройки</div>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label" for="settingsSystemName">Название системы</label>
+                        <input class="input" id="settingsSystemName" type="text" maxlength="128" autocomplete="off">
+                    </div>
+                    <div class="switch-row" style="border-bottom:none;padding-bottom:0">
+                        <div>
+                            <div>Обновлять данные автоматически</div>
+                            <div class="list-description">Периодическое обновление на страницах «Обзор» и «GPIO»</div>
+                        </div>
+                        <label class="switch switch-success">
+                            <input type="checkbox" id="settingsAutoRefresh">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <button type="button" class="button primary" id="settingsSaveButton" style="margin-top:18px">
+                        <span class="mdi mdi-content-save"></span>
+                        Сохранить
+                    </button>
+                    <details class="settings-advanced">
+                        <summary>Дополнительно</summary>
+                        <div class="settings-advanced-body">
+                            <div class="gpio-alert">
+                                <span class="mdi mdi-alert-outline"></span>
+                                Сброс удалит всю сохранённую конфигурацию GPIO. Пины будут отключены до повторной настройки.
+                            </div>
+                            <button type="button" class="button danger" id="gpioDbResetButton" style="margin-top:12px">
+                                Сбросить базу GPIO
+                            </button>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </div>`;
+
+    applySettingsForm();
+    document.getElementById("settingsSaveButton").addEventListener("click", saveSettings);
+    document.getElementById("gpioDbResetButton").addEventListener("click", () => {
+        openModal(
+            "Сброс базы GPIO",
+            `<p>Вы уверены? Будет удалён файл <strong>gpio.db</strong> и снята конфигурация всех пинов.</p>`,
+            resetGPIODatabase,
+        );
+    });
+}
+
 function renderConsole() {
     app.innerHTML = `
         <div class="page-header">
@@ -805,4 +987,4 @@ function createChartRenderer(canvas, min, max) {
 if (!location.hash) {
     history.replaceState(null, "", "#/");
 }
-navigate();
+loadSettings(false).finally(() => navigate());

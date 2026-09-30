@@ -5,9 +5,11 @@ LISTEN ?= :18080
 all: amd64 armv7
 
 run:
-	go run ./cmd/armada -listen $(LISTEN)
+	mkdir -p data
+	go run ./cmd/armada -listen $(LISTEN) -db-path ./data
 
 up:
+	mkdir -p docker-data
 	docker compose up --build
 
 amd64:

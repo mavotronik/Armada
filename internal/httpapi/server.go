@@ -8,6 +8,7 @@ import (
 
 	"armada/internal/gpio"
 	"armada/internal/host"
+	"armada/internal/settings"
 	"armada/internal/term"
 	webroot "armada/web"
 
@@ -17,14 +18,16 @@ import (
 type Server struct {
 	collector *host.Collector
 	gpio      *gpio.Manager
+	settings  *settings.Store
 	password  string
 	mux       *http.ServeMux
 }
 
-func New(collector *host.Collector, gpioMgr *gpio.Manager) *Server {
+func New(collector *host.Collector, gpioMgr *gpio.Manager, settingsStore *settings.Store) *Server {
 	s := &Server{
 		collector: collector,
 		gpio:      gpioMgr,
+		settings:  settingsStore,
 		password:  os.Getenv("ARMADA_PASSWORD"),
 		mux:       http.NewServeMux(),
 	}
@@ -41,10 +44,13 @@ func (s *Server) Handler() http.Handler {
 
 func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v1/host", s.handleHost)
+	s.mux.HandleFunc("GET /api/v1/settings", s.handleSettingsGet)
+	s.mux.HandleFunc("PUT /api/v1/settings", s.handleSettingsPut)
 	s.mux.HandleFunc("GET /api/v1/gpio", s.handleGPIOList)
 	s.mux.HandleFunc("PUT /api/v1/gpio/{id}", s.handleGPIOPin)
 	s.mux.HandleFunc("POST /api/v1/gpio/{id}/default", s.handleGPIODefault)
 	s.mux.HandleFunc("POST /api/v1/gpio/{id}/reset", s.handleGPIOReset)
+	s.mux.HandleFunc("POST /api/v1/gpio/db/reset", s.handleGPIODBReset)
 	s.mux.HandleFunc("GET /ws/console", s.handleConsoleWS)
 	s.mux.Handle("/", serveStatic(webroot.Files))
 }

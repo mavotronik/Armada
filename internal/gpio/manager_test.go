@@ -1,13 +1,14 @@
 package gpio
 
-import (
-	"path/filepath"
-	"testing"
-)
+import "testing"
 
 func TestManagerStubDigitalOut(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "gpio.json")
-	m := NewManager(NewStore(path), true)
+	dir := t.TempDir()
+	store, err := NewStore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := NewManager(store, true)
 
 	if err := m.SetConfig("4", PinConfig{Mode: ModeOut, Output: OutputDigital, Value: true}); err != nil {
 		t.Fatal(err)
@@ -29,8 +30,12 @@ func TestManagerStubDigitalOut(t *testing.T) {
 }
 
 func TestManagerDefaultSaveReset(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "gpio.json")
-	m := NewManager(NewStore(path), true)
+	dir := t.TempDir()
+	store, err := NewStore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := NewManager(store, true)
 
 	cfg := PinConfig{Mode: ModeOut, Output: OutputDigital, Value: false}
 	if err := m.SetConfig("led", cfg); err != nil {

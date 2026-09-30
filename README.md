@@ -7,7 +7,8 @@
 ## Возможности
 
 - **Обзор** — CPU, RAM, диск `/`, температура (если есть в `/sys`), сеть, load average, график CPU
-- **GPIO** — управление контактами Luckfox Pico Max (вход/выход, PWM), сохранение настроек
+- **GPIO** — управление контактами Luckfox Pico Max (вход/выход, PWM), сохранение в SQLite
+- **Настройки** — название системы, автообновление данных в UI
 - **Консоль** — shell узла (`/bin/sh`) через WebSocket и xterm.js
 - **API** — `GET /api/v1/host` (JSON-снимок для будущего контроллера кластера)
 - **Опциональная авторизация** — HTTP Basic (`admin` + пароль из `ARMADA_PASSWORD`)
@@ -67,10 +68,14 @@ make armv7
 | Параметр / переменная | Описание |
 |----------------------|----------|
 | `-listen` | Адрес HTTP-сервера (по умолчанию `:8080`) |
+| `-db-path` | Каталог SQLite-баз (по умолчанию `/etc/armada`): `settings.db`, `gpio.db` |
 | `-no-gpio` | Заглушка GPIO (для Docker/x86) |
-| `-gpio-state` | Файл состояния GPIO (по умолчанию `/var/lib/armada/gpio.json`) |
 | `-iomux-dev` | Устройство Rockchip pinmux (по умолчанию `/dev/iomux`; пустая строка — не трогать mux) |
 | `ARMADA_PASSWORD` | Если задан — Basic Auth на все маршруты, включая WebSocket |
+
+`make run` использует `./data`; Docker Compose монтирует `./docker-data` в `/etc/armada` (каталог создаётся при `make up`).
+
+Если `gpio.db` отсутствует или пуст, сохранённая конфигурация GPIO не применяется при старте.
 
 ### GPIO на Alpine (без luckfox-config)
 
@@ -88,6 +93,9 @@ make armv7
 
 ```http
 GET /api/v1/host
+GET /api/v1/settings
+PUT /api/v1/settings
+POST /api/v1/gpio/db/reset
 ```
 
 Пример ответа (сокращённо):

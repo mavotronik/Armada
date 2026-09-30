@@ -8,8 +8,12 @@ import (
 
 func TestStoreRoundTrip(t *testing.T) {
 	dir := t.TempDir()
-	path := filepath.Join(dir, "gpio.json")
-	store := NewStore(path)
+	path := filepath.Join(dir, "gpio.db")
+	// Create empty file first via Save
+	store, err := NewStore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	st := stateFile{Pins: map[string]storedPin{
 		"4": {
@@ -18,6 +22,9 @@ func TestStoreRoundTrip(t *testing.T) {
 		},
 	}}
 	if err := store.Save(st); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path); err != nil {
 		t.Fatal(err)
 	}
 	loaded, err := store.Load()
@@ -33,7 +40,10 @@ func TestStoreRoundTrip(t *testing.T) {
 }
 
 func TestStoreMissingFile(t *testing.T) {
-	store := NewStore(filepath.Join(t.TempDir(), "missing.json"))
+	store, err := NewStore(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
 	st, err := store.Load()
 	if err != nil {
 		t.Fatal(err)
@@ -43,17 +53,41 @@ func TestStoreMissingFile(t *testing.T) {
 	}
 }
 
-func TestStoreCorruptJSON(t *testing.T) {
+func TestStoreZeroByteFile(t *testing.T) {
 	dir := t.TempDir()
-	path := filepath.Join(dir, "gpio.json")
-	if err := os.WriteFile(path, []byte("{not json"), 0o644); err != nil {
+	path := filepath.Join(dir, "gpio.db")
+	if err := os.WriteFile(path, nil, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	st, err := NewStore(path).Load()
+	store, err := NewStore(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if st.Pins == nil {
-		t.Fatal("expected empty map")
+	st, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(st.Pins) != 0 {
+		t.Fatalf("want empty pins")
+	}
+}
+
+func TestStoreReset(t *testing.T) {
+	dir := t.TempDir()
+	store, err := NewStore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st := stateFile{Pins: map[string]storedPin{
+		"4": {Current: PinConfig{Mode: ModeIn}},
+	}}
+	if err := store.Save(st); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Reset(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "gpio.db")); !os.IsNotExist(err) {
+		t.Fatalf("expected gpio.db removed: %v", err)
 	}
 }

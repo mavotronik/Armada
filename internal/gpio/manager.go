@@ -161,6 +161,35 @@ func (m *Manager) SaveDefault(id string) error {
 	return nil
 }
 
+// ResetDatabase stops PWM, releases pins, deletes gpio.db, and clears in-memory state.
+func (m *Manager) ResetDatabase() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for id := range m.runtime {
+		m.sw.stop(id)
+	}
+	for id, ps := range m.runtime {
+		if !ps.configured {
+			continue
+		}
+		def, ok := PinByID(id)
+		if !ok {
+			continue
+		}
+		if def.HardwarePWM != nil {
+			_ = m.backend.StopHardwarePWM(def.HardwarePWM)
+		}
+		_ = m.backend.Unexport(def.LinuxGPIO())
+	}
+	if err := m.store.Reset(); err != nil {
+		return err
+	}
+	m.state = stateFile{Pins: map[string]storedPin{}}
+	m.runtime = map[string]pinState{}
+	return nil
+}
+
 func (m *Manager) ResetToDefault(id string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

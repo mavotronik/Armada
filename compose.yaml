@@ -2,12 +2,9 @@ services:
   armada:
     build: .
     ports:
-      - "8080:8080"
+      - "18080:8080"
     command: ["-listen", ":8080", "-no-gpio"]
     volumes:
-      - armada-data:/var/lib/armada
+      - ./docker-data:/etc/armada
     environment:
       ARMADA_PASSWORD: ${ARMADA_PASSWORD:-}
-
-volumes:
-  armada-data:

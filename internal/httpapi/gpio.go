@@ -59,6 +59,18 @@ func (s *Server) handleGPIODefault(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (s *Server) handleGPIODBReset(w http.ResponseWriter, r *http.Request) {
+	if s.gpio == nil {
+		http.Error(w, "gpio unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	if err := s.gpio.ResetDatabase(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (s *Server) handleGPIOReset(w http.ResponseWriter, r *http.Request) {
 	if s.gpio == nil {
 		http.Error(w, "gpio unavailable", http.StatusServiceUnavailable)
