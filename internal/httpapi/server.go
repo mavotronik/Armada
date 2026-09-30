@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"os"
 
+	"armada/internal/cluster"
 	"armada/internal/host"
 	"armada/internal/term"
+	"armada/internal/uart"
 	webroot "armada/web"
 
 	"github.com/coder/websocket"
@@ -15,13 +17,15 @@ import (
 
 type Server struct {
 	collector *host.Collector
+	board     *cluster.Board
 	password  string
 	mux       *http.ServeMux
 }
 
-func New(collector *host.Collector) *Server {
+func New(collector *host.Collector, board *cluster.Board) *Server {
 	s := &Server{
 		collector: collector,
+		board:     board,
 		password:  os.Getenv("ARMADA_PASSWORD"),
 		mux:       http.NewServeMux(),
 	}
@@ -38,6 +42,10 @@ func (s *Server) Handler() http.Handler {
 
 func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v1/host", s.handleHost)
+	s.mux.HandleFunc("GET /api/v1/nodes", s.handleNodes)
+	s.mux.HandleFunc("POST /api/v1/nodes/{id}/reboot", s.handleNodeReboot)
+	s.mux.HandleFunc("POST /api/v1/nodes/{id}/shutdown", s.handleNodeShutdown)
+	s.mux.HandleFunc("POST /api/v1/nodes/{id}/reset", s.handleNodeReset)
 	s.mux.HandleFunc("GET /ws/console", s.handleConsoleWS)
 	s.mux.Handle("/", serveStatic(webroot.Files))
 }
@@ -46,6 +54,50 @@ func (s *Server) handleHost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	_ = json.NewEncoder(w).Encode(s.collector.Snapshot())
+}
+
+func (s *Server) handleNodes(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	nodes := []cluster.Node{}
+	if s.board != nil {
+		nodes = s.board.Nodes()
+	}
+	_ = json.NewEncoder(w).Encode(struct {
+		Nodes []cluster.Node `json:"nodes"`
+	}{Nodes: nodes})
+}
+
+func (s *Server) handleNodeReboot(w http.ResponseWriter, r *http.Request) {
+	s.nodeAction(w, r, func(id int) error { return s.board.Reboot(id) })
+}
+
+func (s *Server) handleNodeShutdown(w http.ResponseWriter, r *http.Request) {
+	s.nodeAction(w, r, func(id int) error { return s.board.Shutdown(id) })
+}
+
+func (s *Server) handleNodeReset(w http.ResponseWriter, r *http.Request) {
+	s.nodeAction(w, r, func(id int) error { return s.board.Reset(id) })
+}
+
+func (s *Server) nodeAction(w http.ResponseWriter, r *http.Request, fn func(int) error) {
+	if s.board == nil {
+		http.Error(w, "uart hub is not configured", http.StatusNotFound)
+		return
+	}
+	id, err := uart.ParseNodeID(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := fn(id); err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(struct {
+		OK bool `json:"ok"`
+	}{OK: true})
 }
 
 func (s *Server) handleConsoleWS(w http.ResponseWriter, r *http.Request) {

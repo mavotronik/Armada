@@ -2,6 +2,8 @@ const app = document.getElementById("app");
 const sidebar = document.getElementById("sidebar");
 
 let hostPollInterval = null;
+let lastNodes = [];
+let lastHostDevice = null;
 let cpuHistory = [];
 let charts = [];
 let consoleSession = null;
@@ -113,6 +115,19 @@ async function fetchHost(manual) {
     } catch (e) {
         if (manual) showToast("Ошибка загрузки метрик");
     }
+    await fetchNodes();
+    renderDeviceTable();
+}
+
+async function fetchNodes() {
+    try {
+        const res = await fetch("/api/v1/nodes", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        lastNodes = data.nodes || [];
+    } catch (e) {
+        lastNodes = [];
+    }
 }
 
 function applyHostData(data) {
@@ -148,11 +163,7 @@ function applyHostData(data) {
 
     setText("loadValue", `${data.cpu.load1.toFixed(2)} / ${data.cpu.load5.toFixed(2)} / ${data.cpu.load15.toFixed(2)}`);
 
-    const tbody = document.getElementById("deviceBody");
-    if (tbody && data.device) {
-        const d = data.device;
-        tbody.innerHTML = deviceRowHtml(d.name, d.type, d.ip || "—", d.status, `${Math.round(d.loadPercent)}%`);
-    }
+    lastHostDevice = data.device || null;
 
     const netList = document.getElementById("netList");
     if (netList && data.network) {
@@ -195,15 +206,44 @@ function formatUptime(sec) {
 }
 
 function deviceRowHtml(name, type, ip, status, load) {
-    const statusText = status === "online" ? "Online" : status;
+    const statusText = status === "online" ? "Online" : status === "offline" ? "Offline" : status;
+    const dot = status === "online" ? "online" : status === "offline" ? "offline" : "warning";
     return `<tr>
-        <td><span class="mdi mdi-server"></span> ${name}</td>
-        <td>${type}</td>
-        <td>${ip}</td>
-        <td><span class="status"><span class="status-dot status-${status === "online" ? "online" : "warning"}"></span>${statusText}</span></td>
-        <td>${load}</td>
+        <td><span class="mdi mdi-server"></span> ${esc(name)}</td>
+        <td>${esc(type)}</td>
+        <td>${esc(ip)}</td>
+        <td><span class="status"><span class="status-dot status-${dot}"></span>${esc(statusText)}</span></td>
+        <td>${esc(load)}</td>
         <td></td>
     </tr>`;
+}
+
+function esc(s) {
+    return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+    }[c]));
+}
+
+function renderDeviceTable() {
+    const tbody = document.getElementById("deviceBody");
+    if (!tbody) return;
+    const rows = [];
+    if (lastHostDevice) {
+        const d = lastHostDevice;
+        rows.push(deviceRowHtml(d.name, d.type, d.ip || "—", d.status, `${Math.round(d.loadPercent)}%`));
+    }
+    for (const n of lastNodes) {
+        const host = n.host;
+        const name = host?.hostname || `node ${n.id}`;
+        const ip = host?.device?.ip || "—";
+        const load = host ? `${Math.round(host.cpu?.usagePercent || 0)}%` : "—";
+        rows.push(deviceRowHtml(name, "UART", ip, n.online ? "online" : "offline", load));
+    }
+    tbody.innerHTML = rows.join("");
 }
 
 function networkItemHtml(n) {
