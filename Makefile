@@ -1,6 +1,8 @@
-.PHONY: run up build-armv7 test
+.PHONY: all run up armv7 test
 
 LISTEN ?= :18080
+
+all: amd64 armv7
 
 run:
 	go run ./cmd/armada -listen $(LISTEN)
@@ -8,7 +10,10 @@ run:
 up:
 	docker compose up --build
 
-build-armv7:
+amd64:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o bin/armada-amd64 ./cmd/armada
+
+armv7:
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -ldflags="-s -w" -o bin/armada-armv7 ./cmd/armada
 
 test:

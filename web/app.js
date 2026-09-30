@@ -2,6 +2,8 @@ const app = document.getElementById("app");
 const sidebar = document.getElementById("sidebar");
 
 let hostPollInterval = null;
+let gpioPollInterval = null;
+let gpioGridBuilt = false;
 let cpuHistory = [];
 let charts = [];
 let consoleSession = null;
@@ -49,6 +51,8 @@ document.getElementById("themeButton").addEventListener("click", () => {
 document.getElementById("refreshButton").addEventListener("click", () => {
     if (getPageFromHash() === "dashboard") {
         fetchHost(true);
+    } else if (getPageFromHash() === "gpio") {
+        fetchGPIO(true);
     } else {
         showToast("Обновлено");
     }
@@ -57,6 +61,7 @@ document.getElementById("refreshButton").addEventListener("click", () => {
 const pages = {
     dashboard: renderDashboard,
     console: renderConsole,
+    gpio: renderGPIO,
 };
 
 function getPageFromHash() {
@@ -66,6 +71,7 @@ function getPageFromHash() {
 
 function navigate() {
     stopHostPoll();
+    stopGPIOPoll();
     teardownConsole();
 
     const page = getPageFromHash();
@@ -328,6 +334,272 @@ function stopHostPoll() {
         clearInterval(hostPollInterval);
         hostPollInterval = null;
     }
+}
+
+function stopGPIOPoll() {
+    if (gpioPollInterval) {
+        clearInterval(gpioPollInterval);
+        gpioPollInterval = null;
+    }
+    gpioGridBuilt = false;
+}
+
+function renderGPIO() {
+    gpioGridBuilt = false;
+    app.innerHTML = `
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">GPIO</h1>
+                <div class="page-subtitle">Luckfox Pico Max · in/out, PWM, сохранение состояния</div>
+            </div>
+        </div>
+        <div class="gpio-alert" id="gpioStubBanner" style="display:none">
+            <span class="mdi mdi-information-outline"></span>
+            Режим заглушки: sysfs GPIO недоступен (Docker / x86). Настройки сохраняются в файл, но пины не переключаются.
+        </div>
+        <div class="gpio-grid" id="gpioGrid">
+            <div class="card"><div class="card-body">Загрузка…</div></div>
+        </div>`;
+
+    fetchGPIO(false);
+    gpioPollInterval = setInterval(() => {
+        if (getPageFromHash() !== "gpio") {
+            stopGPIOPoll();
+            return;
+        }
+        fetchGPIO(false);
+    }, 1000);
+}
+
+async function fetchGPIO(manual) {
+    try {
+        const res = await fetch("/api/v1/gpio", { cache: "no-store" });
+        if (!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+        applyGPIOData(data);
+        if (manual) showToast("GPIO обновлено");
+    } catch (e) {
+        if (manual) showToast("Ошибка загрузки GPIO");
+    }
+}
+
+function applyGPIOData(data) {
+    const banner = document.getElementById("gpioStubBanner");
+    if (banner) {
+        banner.style.display = data.hardware ? "none" : "block";
+    }
+    const grid = document.getElementById("gpioGrid");
+    if (!grid) return;
+
+    if (!gpioGridBuilt) {
+        grid.innerHTML = (data.pins || []).map(pinCardHtml).join("");
+        grid.addEventListener("change", onGPIOChange);
+        grid.addEventListener("click", onGPIOClicks);
+        gpioGridBuilt = true;
+    } else {
+        for (const pin of data.pins || []) {
+            updatePinLiveFields(pin);
+        }
+    }
+}
+
+function pinCardHtml(pin) {
+    const cfg = pin.config || { mode: "in" };
+    const isOut = cfg.mode === "out";
+    const isPwm = isOut && cfg.output === "pwm";
+    const level = pin.level != null ? (pin.level ? "1 (HIGH)" : "0 (LOW)") : "—";
+    const uartWarn = pin.uart
+        ? `<div class="gpio-alert">
+            <span class="mdi mdi-alert-outline"></span>
+            Контакт может быть занят ${escapeHtml(pin.uart)} (${escapeHtml(pin.uartLine || "")}).
+            Перевод в GPIO нарушит работу UART на этих пинах.
+           </div>`
+        : "";
+    const muxWarn = pin.muxNote
+        ? `<div class="gpio-alert">
+            <span class="mdi mdi-alert-outline"></span>
+            ${escapeHtml(pin.muxNote)}
+           </div>`
+        : "";
+    const volt = pin.voltageNote
+        ? `<div class="gpio-meta">Логика ${escapeHtml(pin.voltageNote)}</div>`
+        : "";
+    const err = pin.lastError
+        ? `<div class="gpio-error pin-error">${escapeHtml(pin.lastError)}</div>`
+        : `<div class="gpio-error pin-error" style="display:none"></div>`;
+    const pwmBackend = pin.pwmBackend
+        ? `<div class="gpio-meta pin-pwm-backend">PWM: ${escapeHtml(pin.pwmBackend)}</div>`
+        : `<div class="gpio-meta pin-pwm-backend" style="display:none"></div>`;
+
+    return `<div class="card" data-gpio-id="${escapeHtml(pin.id)}">
+        <div class="card-header">
+            <div class="card-title">${escapeHtml(pin.label)}</div>
+            <span style="margin-left:auto;font-size:12px;color:var(--text-secondary)">GPIO ${pin.linuxGpio}</span>
+        </div>
+        <div class="card-body">
+            ${uartWarn}
+            ${muxWarn}
+            ${volt}
+            <div class="form-group">
+                <label class="form-label">Режим</label>
+                <select class="select" name="mode" data-field="mode">
+                    <option value="in" ${cfg.mode === "in" ? "selected" : ""}>Вход</option>
+                    <option value="out" ${cfg.mode === "out" ? "selected" : ""}>Выход</option>
+                </select>
+            </div>
+            <div class="form-group gpio-out-fields" style="display:${isOut ? "block" : "none"}">
+                <label class="form-label">Тип выхода</label>
+                <select class="select" name="output" data-field="output">
+                    <option value="digital" ${cfg.output !== "pwm" ? "selected" : ""}>Цифровой</option>
+                    <option value="pwm" ${cfg.output === "pwm" ? "selected" : ""}>PWM</option>
+                </select>
+            </div>
+            <div class="switch-row gpio-digital-row" style="display:${isOut && !isPwm ? "flex" : "none"}">
+                <span>Уровень</span>
+                <label class="switch">
+                    <input type="checkbox" name="value" data-field="value" ${cfg.value ? "checked" : ""}>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="gpio-pwm-fields" style="display:${isPwm ? "block" : "none"}">
+                <div class="form-group">
+                    <label class="form-label">Частота, Гц</label>
+                    <input class="input" type="number" min="1" max="2000" step="1" name="frequencyHz"
+                        data-field="frequencyHz" value="${Number(cfg.frequencyHz || 1000)}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Скважность, %</label>
+                    <input class="input" type="number" min="0" max="100" step="1" name="dutyPercent"
+                        data-field="dutyPercent" value="${Number(cfg.dutyPercent || 0)}">
+                </div>
+            </div>
+            <div class="gpio-meta">Уровень / вход: <span class="pin-level">${level}</span></div>
+            ${pwmBackend}
+            ${err}
+            <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+                <button type="button" class="button" data-action="default">Сделать умолчанием</button>
+                <button type="button" class="button" data-action="reset">Вернуть умолчание</button>
+            </div>
+        </div>
+    </div>`;
+}
+
+function updatePinLiveFields(pin) {
+    const root = document.querySelector(`[data-gpio-id="${pin.id}"]`);
+    if (!root) return;
+    const levelEl = root.querySelector(".pin-level");
+    if (levelEl) {
+        levelEl.textContent = pin.level != null ? (pin.level ? "1 (HIGH)" : "0 (LOW)") : "—";
+    }
+    const errEl = root.querySelector(".pin-error");
+    if (errEl) {
+        if (pin.lastError) {
+            errEl.style.display = "block";
+            errEl.textContent = pin.lastError;
+        } else {
+            errEl.style.display = "none";
+            errEl.textContent = "";
+        }
+    }
+    const pwmEl = root.querySelector(".pin-pwm-backend");
+    if (pwmEl) {
+        if (pin.pwmBackend) {
+            pwmEl.style.display = "block";
+            pwmEl.textContent = `PWM: ${pin.pwmBackend}`;
+        } else {
+            pwmEl.style.display = "none";
+        }
+    }
+}
+
+function onGPIOChange(ev) {
+    const root = ev.target.closest("[data-gpio-id]");
+    if (!root || !ev.target.dataset.field) return;
+    refreshPinVisibility(root);
+    applyPinConfig(root);
+}
+
+function onGPIOClicks(ev) {
+    const btn = ev.target.closest("button[data-action]");
+    if (!btn) return;
+    const root = btn.closest("[data-gpio-id]");
+    if (!root) return;
+    const id = root.dataset.gpioId;
+    const action = btn.dataset.action;
+    if (action === "default") {
+        postGPIOAction(id, "default");
+    } else if (action === "reset") {
+        postGPIOAction(id, "reset");
+    }
+}
+
+function refreshPinVisibility(root) {
+    const mode = root.querySelector('[name="mode"]').value;
+    const outWrap = root.querySelector(".gpio-out-fields");
+    const out = root.querySelector('[name="output"]')?.value || "digital";
+    const isOut = mode === "out";
+    if (outWrap) outWrap.style.display = isOut ? "block" : "none";
+    const digital = root.querySelector(".gpio-digital-row");
+    const pwm = root.querySelector(".gpio-pwm-fields");
+    if (digital) digital.style.display = isOut && out !== "pwm" ? "flex" : "none";
+    if (pwm) pwm.style.display = isOut && out === "pwm" ? "block" : "none";
+}
+
+function configFromCard(root) {
+    const mode = root.querySelector('[name="mode"]').value;
+    const cfg = { mode };
+    if (mode === "out") {
+        cfg.output = root.querySelector('[name="output"]').value;
+        if (cfg.output === "pwm") {
+            cfg.frequencyHz = Number(root.querySelector('[name="frequencyHz"]').value) || 1000;
+            cfg.dutyPercent = Number(root.querySelector('[name="dutyPercent"]').value) || 0;
+        } else {
+            cfg.value = root.querySelector('[name="value"]').checked;
+        }
+    }
+    return cfg;
+}
+
+async function applyPinConfig(root) {
+    const id = root.dataset.gpioId;
+    const cfg = configFromCard(root);
+    try {
+        const res = await fetch(`/api/v1/gpio/${encodeURIComponent(id)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cfg),
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || res.statusText);
+        }
+        fetchGPIO(false);
+    } catch (e) {
+        showToast(`Ошибка ${id}: ${e.message}`);
+    }
+}
+
+async function postGPIOAction(id, action) {
+    try {
+        const res = await fetch(`/api/v1/gpio/${encodeURIComponent(id)}/${action}`, { method: "POST" });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || res.statusText);
+        }
+        showToast(action === "default" ? "Умолчание сохранено" : "Применено умолчание");
+        gpioGridBuilt = false;
+        fetchGPIO(false);
+    } catch (e) {
+        showToast(e.message);
+    }
+}
+
+function escapeHtml(s) {
+    return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
 }
 
 function renderConsole() {

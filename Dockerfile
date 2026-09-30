@@ -17,4 +17,4 @@ COPY --from=build /armada /usr/local/bin/armada
 
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/armada"]
-CMD ["-listen", ":8080"]
+CMD ["-listen", ":8080", "-no-gpio"]

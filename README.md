@@ -7,6 +7,7 @@
 ## Возможности
 
 - **Обзор** — CPU, RAM, диск `/`, температура (если есть в `/sys`), сеть, load average, график CPU
+- **GPIO** — управление контактами Luckfox Pico Max (вход/выход, PWM), сохранение настроек
 - **Консоль** — shell узла (`/bin/sh`) через WebSocket и xterm.js
 - **API** — `GET /api/v1/host` (JSON-снимок для будущего контроллера кластера)
 - **Опциональная авторизация** — HTTP Basic (`admin` + пароль из `ARMADA_PASSWORD`)
@@ -47,7 +48,7 @@ ARMADA_PASSWORD=secret make up
 ### Сборка для платы (ARMv7)
 
 ```bash
-make build-armv7
+make armv7
 # bin/armada-armv7
 ```
 
@@ -66,7 +67,22 @@ make build-armv7
 | Параметр / переменная | Описание |
 |----------------------|----------|
 | `-listen` | Адрес HTTP-сервера (по умолчанию `:8080`) |
+| `-no-gpio` | Заглушка GPIO (для Docker/x86) |
+| `-gpio-state` | Файл состояния GPIO (по умолчанию `/var/lib/armada/gpio.json`) |
+| `-iomux-dev` | Устройство Rockchip pinmux (по умолчанию `/dev/iomux`; пустая строка — не трогать mux) |
 | `ARMADA_PASSWORD` | Если задан — Basic Auth на все маршруты, включая WebSocket |
+
+### GPIO на Alpine (без luckfox-config)
+
+На официальном Buildroot-образе Luckfox pinmux меняют через `luckfox-config`; в **Alpine его нет**. Варианты:
+
+1. **Проще всего** — использовать контакты **GPIO1** (например 12, 14, 15, 16): они обычно уже в режиме GPIO.
+2. **Без пересборки DTB** — на RV1106 armada сама переводит pad в GPIO: сначала `/dev/iomux`, если его нет — запись регистра IOMUX в IOC (`0xff538000`) через `/dev/mem`. Процесс должен быть **root**. Это не требует `luckfox-config` и не требует своего ядра у пользователя.
+3. Линии, которые ядро уже заняло (`gpioinfo` показывает `consumer=`, например **SPI0 CS0** на контакте 12), так не освободить: драйвер SPI держит GPIO. Для них либо другой контакт, либо `status = "disabled"` у `&spi0`.
+
+Контакты **1–2** заняты консолью UART2 и в UI не показываются. На контактах **UART3/UART4** в интерфейсе есть предупреждение.
+
+**`device or resource busy`** — линию уже держит драйвер ядра. В логе armada будет `consumer=…` (например **`spi0 CS0`** на **контакте 12** — нужно `status = "disabled"` у `&spi0` в device tree, если SPI не используете). Без `gpioinfo`: `apk add libgpiod` (репозиторий **community** в `/etc/apk/repositories`) или смотрите consumer в логе armada. «Свободные» контакты для GPIO: **11**, **17**, **29**, **34**.
 
 ## API
 
